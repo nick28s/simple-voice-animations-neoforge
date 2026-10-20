@@ -1,12 +1,13 @@
 package de.maxhenkel.simplevoiceanimations.mixin;
 
-import de.maxhenkel.simplevoiceanimations.interfaces.AnimationRenderExtension;
-import de.maxhenkel.simplevoiceanimations.interfaces.AnimationRenderState;
+import de.maxhenkel.simplevoiceanimations.interfaces.AnimationDataExtension;
 import de.maxhenkel.simplevoiceanimations.interfaces.SplitHeadExtension;
+import de.maxhenkel.simplevoiceanimations.config.ClientConfig;
+import de.maxhenkel.simplevoiceanimations.sync.Preferences;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -17,6 +18,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(HumanoidModel.class)
 public class HumanoidModelMixin {
 
+    private static final float SPLIT_ROTATION = Mth.DEG_TO_RAD * 45F;
+
     @Shadow
     @Final
     public ModelPart head;
@@ -25,18 +28,21 @@ public class HumanoidModelMixin {
     @Final
     public ModelPart hat;
 
-    @Inject(method = "setupAnim(Lnet/minecraft/client/renderer/entity/state/HumanoidRenderState;)V", at = @At("RETURN"))
-    public void setupAnim(HumanoidRenderState s, CallbackInfo ci) {
-        if (!(s instanceof AnimationRenderExtension stateExtension)) {
+    @Inject(method = "setupAnim(Lnet/minecraft/world/entity/LivingEntity;FFFFF)V", at = @At("RETURN"))
+    private void simplevoiceanimations$setupAnim(LivingEntity entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, CallbackInfo ci) {
+        if (!(entity instanceof AnimationDataExtension dataExtension)) {
             return;
         }
-        AnimationRenderState state = stateExtension.simplevoiceanimations$getState();
-        head.xScale = state.headXScale;
-        head.yScale = state.headYScale;
-        head.zScale = state.headZScale;
-        head.xRot = Mth.clamp(head.xRot + state.headXRot, -Mth.HALF_PI, Mth.HALF_PI);
-        ((SplitHeadExtension) (Object) head).simplevoiceanimations$setSplitHead(state.splitHead, state.headSplitHeight, state.headSplitRotation, state.headSplitDistance);
-        ((SplitHeadExtension) (Object) hat).simplevoiceanimations$setSplitHead(state.splitHead, state.headSplitHeight, state.headSplitRotation, state.headSplitDistance);
+        float progress = dataExtension.simplevoiceanimations$getData().getAnimationProgress();
+        Preferences preferences = ClientConfig.getPreferences();
+        float animationProgress = progress * preferences.getIntensity();
+        boolean split = preferences.getHeadAnimationStyle().hasSplit() && animationProgress > 0.001F;
+        applySplit(head, split, animationProgress, preferences.getHeadAnimationStyle(), preferences.getHeadSplitHeight());
+        applySplit(hat, split, animationProgress, preferences.getHeadAnimationStyle(), preferences.getHeadSplitHeight());
+    }
+
+    private static void applySplit(ModelPart part, boolean split, float progress, ClientConfig.HeadAnimationStyle style, float splitHeight) {
+        ((SplitHeadExtension) (Object) part).simplevoiceanimations$setSplitHead(split, splitHeight, style == ClientConfig.HeadAnimationStyle.SPLIT_HINGE ? progress * SPLIT_ROTATION : 0F, style == ClientConfig.HeadAnimationStyle.SPLIT_VERTICAL ? progress * 0.2F : 0F);
     }
 
 }

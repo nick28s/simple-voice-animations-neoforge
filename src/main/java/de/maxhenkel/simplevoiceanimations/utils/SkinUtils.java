@@ -1,27 +1,20 @@
 package de.maxhenkel.simplevoiceanimations.utils;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.world.entity.player.PlayerSkin;
+import net.minecraft.client.resources.DefaultPlayerSkin;
+import net.minecraft.client.resources.PlayerSkin;
 
-import javax.annotation.Nullable;
-import java.util.function.Supplier;
+public final class SkinUtils {
 
-public class SkinUtils {
-
-    @Nullable
-    private static Supplier<PlayerSkin> skinLookup;
+    private SkinUtils() {
+    }
 
     public static PlayerSkin getLocalPlayerSkin() {
-        Minecraft mc = Minecraft.getInstance();
-        LocalPlayer player = mc.player;
-        if (player != null) {
-            return player.getSkin();
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player != null) {
+            return minecraft.player.getSkin();
         }
-        if (skinLookup == null) {
-            skinLookup = mc.getSkinManager().createLookup(mc.getGameProfile(), false);
-        }
-        return skinLookup.get();
+        return DefaultPlayerSkin.get(minecraft.getUser().getProfileId());
     }
 
 }

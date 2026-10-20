@@ -1,37 +1,53 @@
 package de.maxhenkel.simplevoiceanimations;
 
-import de.maxhenkel.configbuilder.ConfigBuilder;
-import de.maxhenkel.simplevoiceanimations.config.ServerConfig;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
+import de.maxhenkel.simplevoiceanimations.config.ClientConfig;
 import de.maxhenkel.simplevoiceanimations.sync.PlayerPreferencesPayload;
-import de.maxhenkel.simplevoiceanimations.sync.ServerPreferencesSync;
 import de.maxhenkel.simplevoiceanimations.sync.UpdatePreferencesPayload;
-import de.maxhenkel.simplevoiceanimations.sync.VersionPayload;
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
-import net.fabricmc.loader.api.FabricLoader;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import de.maxhenkel.simplevoiceanimations.sync.ClientPreferencesSync;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
-public class SimpleVoiceAnimations implements ModInitializer {
+@Mod(SimpleVoiceAnimations.MODID)
+public final class SimpleVoiceAnimations {
 
     public static final String MODID = "simplevoiceanimations";
-    public static final Logger LOGGER = LogManager.getLogger(MODID);
-    public static final int COMPATIBILITY_VERSION = 4;
+    private final Map<UUID, PlayerPreferencesPayload> preferences = new ConcurrentHashMap<>();
 
-    public static ServerConfig SERVER_CONFIG;
+    public SimpleVoiceAnimations(IEventBus modEventBus, ModContainer modContainer) {
+        modContainer.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC);
+        modEventBus.addListener(this::registerPayloads);
+        NeoForge.EVENT_BUS.register(this);
+    }
 
-    @Override
-    public void onInitialize() {
-        SERVER_CONFIG = ConfigBuilder
-                .builder(ServerConfig::new)
-                .path(FabricLoader.getInstance().getConfigDir().resolve(MODID).resolve("simplevoiceanimations-server.properties"))
-                .build();
+    private void registerPayloads(RegisterPayloadHandlersEvent event) {
+        event.registrar("1")
+                .playToClient(PlayerPreferencesPayload.TYPE, PlayerPreferencesPayload.CODEC,
+                        (payload, context) -> context.enqueueWork(() -> ClientPreferencesSync.receive(payload)));
+        event.registrar("1")
+                .playToServer(UpdatePreferencesPayload.TYPE, UpdatePreferencesPayload.CODEC,
+                        (payload, context) -> context.enqueueWork(() -> {
+                            if (context.player() instanceof net.minecraft.server.level.ServerPlayer sender) {
+                                PlayerPreferencesPayload update = new PlayerPreferencesPayload(sender.getUUID(), payload.preferences());
+                                preferences.put(sender.getUUID(), update);
+                                net.neoforged.neoforge.network.PacketDistributor.sendToAllPlayers(update);
+                            }
+                        }));
+    }
 
-        PayloadTypeRegistry.clientboundConfiguration().register(VersionPayload.TYPE, VersionPayload.CODEC);
-        PayloadTypeRegistry.serverboundConfiguration().register(VersionPayload.TYPE, VersionPayload.CODEC);
-        PayloadTypeRegistry.serverboundPlay().register(UpdatePreferencesPayload.TYPE, UpdatePreferencesPayload.CODEC);
-        PayloadTypeRegistry.clientboundPlay().register(PlayerPreferencesPayload.TYPE, PlayerPreferencesPayload.CODEC);
-        ServerPreferencesSync.init();
+    @net.neoforged.bus.api.SubscribeEvent
+    public void playerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof net.minecraft.server.level.ServerPlayer player) {
+            preferences.values().forEach(update -> PacketDistributor.sendToPlayer(player, update));
+        }
     }
 
 }

@@ -1,91 +1,60 @@
 package de.maxhenkel.simplevoiceanimations.config;
 
-import de.maxhenkel.configbuilder.ConfigBuilder;
-import de.maxhenkel.configbuilder.entry.BooleanConfigEntry;
-import de.maxhenkel.configbuilder.entry.EnumConfigEntry;
-import de.maxhenkel.configbuilder.entry.FloatConfigEntry;
-import de.maxhenkel.simplevoiceanimations.sync.ClientPreferencesSync;
 import de.maxhenkel.simplevoiceanimations.sync.Preferences;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
-import javax.annotation.Nullable;
+public final class ClientConfig {
 
-public class ClientConfig {
+    public static final ModConfigSpec SPEC;
+    private static final ModConfigSpec.EnumValue<HeadAnimationStyle> HEAD_ANIMATION_STYLE;
+    private static final ModConfigSpec.DoubleValue HEAD_SPLIT_HEIGHT;
+    private static final ModConfigSpec.DoubleValue INTENSITY;
+    private static final ModConfigSpec.BooleanValue FALLBACK_TO_OWN_ANIMATIONS;
 
-    public static Preferences DEFAULT_PREFERENCES = new Preferences(HeadAnimationStyle.NONE, Preferences.DEFAULT_SPLIT_HEIGHT, Preferences.DEFAULT_INTENSITY);
+    public static final Preferences DEFAULT_PREFERENCES = new Preferences(
+            HeadAnimationStyle.SPLIT_HINGE,
+            Preferences.DEFAULT_SPLIT_HEIGHT,
+            Preferences.DEFAULT_INTENSITY
+    );
 
-    private final EnumConfigEntry<HeadAnimationStyle> headAnimationStyle;
-    private final FloatConfigEntry headSplitHeight;
-    private final FloatConfigEntry intensity;
-    private final BooleanConfigEntry fallbackToOwnAnimations;
-    private final BooleanConfigEntry setUp;
-
-    @Nullable
-    private Preferences localPreferences;
-
-    public ClientConfig(ConfigBuilder builder) {
-        headAnimationStyle = builder.enumEntry("head_animation_style", DEFAULT_PREFERENCES.getHeadAnimationStyle());
-        headSplitHeight = builder.floatEntry("head_split_height", DEFAULT_PREFERENCES.getHeadSplitHeight(), Preferences.MIN_SPLIT_HEIGHT, Preferences.MAX_SPLIT_HEIGHT,
-                "The height of the head split in pixels, measured from the bottom of the head"
-        );
-        intensity = builder.floatEntry("intensity", DEFAULT_PREFERENCES.getIntensity(), Preferences.MIN_INTENSITY, Preferences.MAX_INTENSITY,
-                "How strongly the head animation reacts to the voice, where 1 is the default strength"
-        );
-        fallbackToOwnAnimations = builder.booleanEntry("fallback_to_own_animations", true,
-                "If the server does not have the mod installed and thus can't sync animation settings, your own animation settings are applied to all other players"
-        );
-        setUp = builder.booleanEntry("set_up", false,
-                "If the player has configured their head animation"
-        );
+    static {
+        ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
+        HEAD_ANIMATION_STYLE = builder
+                .comment("The head animation style used while speaking")
+                .defineEnum("head_animation_style", DEFAULT_PREFERENCES.getHeadAnimationStyle());
+        HEAD_SPLIT_HEIGHT = builder
+                .comment("The height of the head split in pixels, measured from the bottom")
+                .defineInRange("head_split_height", (double) Preferences.DEFAULT_SPLIT_HEIGHT, (double) Preferences.MIN_SPLIT_HEIGHT, (double) Preferences.MAX_SPLIT_HEIGHT);
+        INTENSITY = builder
+                .comment("How strongly the head animation reacts to the voice")
+                .defineInRange("intensity", (double) Preferences.DEFAULT_INTENSITY, (double) Preferences.MIN_INTENSITY, (double) Preferences.MAX_INTENSITY);
+        FALLBACK_TO_OWN_ANIMATIONS = builder
+                .comment("Use your local settings for players when the server cannot synchronize settings")
+                .define("fallback_to_own_animations", true);
+        SPEC = builder.build();
     }
 
-    public HeadAnimationStyle getHeadAnimationStyle() {
-        return headAnimationStyle.get();
+    private ClientConfig() {
     }
 
-    public void setHeadAnimationStyle(HeadAnimationStyle style) {
-        headAnimationStyle.set(style).save();
-        setSetUp(true);
-        getLocalPreferences().setHeadAnimationStyle(headAnimationStyle.get());
-        ClientPreferencesSync.sendLocalPreferences();
+    public static Preferences getPreferences() {
+        return new Preferences(HEAD_ANIMATION_STYLE.get(), (float) HEAD_SPLIT_HEIGHT.get().doubleValue(), (float) INTENSITY.get().doubleValue());
     }
 
-    public boolean isSetUp() {
-        return setUp.get();
+    public static boolean isFallbackToOwnAnimations() {
+        return FALLBACK_TO_OWN_ANIMATIONS.get();
     }
 
-    public void setSetUp(boolean setUp) {
-        this.setUp.set(setUp).save();
+    public static void setHeadAnimationStyle(HeadAnimationStyle style) {
+        HEAD_ANIMATION_STYLE.set(style);
     }
 
-    public float getHeadSplitHeight() {
-        return headSplitHeight.get();
+    public static void setHeadSplitHeight(float height) {
+        HEAD_SPLIT_HEIGHT.set((double) height);
     }
 
-    public void setHeadSplitHeight(float splitHeight) {
-        headSplitHeight.set(splitHeight).save();
-        getLocalPreferences().setHeadSplitHeight(headSplitHeight.get());
-        ClientPreferencesSync.sendLocalPreferences();
-    }
-
-    public float getIntensity() {
-        return intensity.get();
-    }
-
-    public boolean isFallbackToOwnAnimations() {
-        return fallbackToOwnAnimations.get();
-    }
-
-    public void setIntensity(float intensityValue) {
-        intensity.set(intensityValue).save();
-        getLocalPreferences().setIntensity(intensity.get());
-        ClientPreferencesSync.sendLocalPreferences();
-    }
-
-    public Preferences getLocalPreferences() {
-        if (localPreferences == null) {
-            localPreferences = new Preferences(headAnimationStyle.get(), headSplitHeight.get(), intensity.get());
-        }
-        return localPreferences;
+    public static void setIntensity(float intensity) {
+        INTENSITY.set((double) intensity);
     }
 
     public enum HeadAnimationStyle {
@@ -97,14 +66,14 @@ public class ClientConfig {
         SPLIT_VERTICAL(true),
         NOD(false);
 
-        private final boolean hasSplit;
+        private final boolean split;
 
-        HeadAnimationStyle(boolean hasSplit) {
-            this.hasSplit = hasSplit;
+        HeadAnimationStyle(boolean split) {
+            this.split = split;
         }
 
         public boolean hasSplit() {
-            return hasSplit;
+            return split;
         }
     }
 

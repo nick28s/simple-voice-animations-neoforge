@@ -1,29 +1,26 @@
 package de.maxhenkel.simplevoiceanimations.sync;
 
 import de.maxhenkel.simplevoiceanimations.SimpleVoiceAnimations;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.UUID;
 
 public record PlayerPreferencesPayload(UUID player, Preferences preferences) implements CustomPacketPayload {
 
-    public static final CustomPacketPayload.Type<PlayerPreferencesPayload> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(SimpleVoiceAnimations.MODID, "player_preferences"));
-    public static final StreamCodec<FriendlyByteBuf, PlayerPreferencesPayload> CODEC = CustomPacketPayload.codec(PlayerPreferencesPayload::write, PlayerPreferencesPayload::read);
-
-    private static PlayerPreferencesPayload read(FriendlyByteBuf buffer) {
-        return new PlayerPreferencesPayload(buffer.readUUID(), Preferences.read(buffer));
-    }
-
-    private void write(FriendlyByteBuf buffer) {
-        buffer.writeUUID(player);
-        preferences.write(buffer);
-    }
+    public static final Type<PlayerPreferencesPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(SimpleVoiceAnimations.MODID, "player_preferences"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, PlayerPreferencesPayload> CODEC = StreamCodec.of(
+            (buffer, payload) -> {
+                buffer.writeUUID(payload.player);
+                payload.preferences.write(buffer);
+            },
+            buffer -> new PlayerPreferencesPayload(buffer.readUUID(), Preferences.read(buffer))
+    );
 
     @Override
-    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+    public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 

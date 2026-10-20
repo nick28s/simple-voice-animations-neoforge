@@ -1,51 +1,50 @@
 package de.maxhenkel.simplevoiceanimations;
 
-import de.maxhenkel.simplevoiceanimations.config.ClientConfig;
-import de.maxhenkel.configbuilder.ConfigBuilder;
-import de.maxhenkel.simplevoiceanimations.sync.ClientPreferencesSync;
-import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.minecraft.ChatFormatting;
+import net.neoforged.api.distmarker.Dist;
+import de.maxhenkel.simplevoiceanimations.gui.AnimationSettingsScreen;
 import net.minecraft.client.KeyMapping;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.chat.Component;
-import org.lwjgl.sdl.SDLScancode;
+import com.mojang.blaze3d.platform.InputConstants;
+import org.lwjgl.glfw.GLFW;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
+import de.maxhenkel.simplevoiceanimations.sync.ClientPreferencesSync;
+import net.neoforged.fml.common.Mod;
 
-@Environment(EnvType.CLIENT)
-public class SimpleVoiceAnimationsClient implements ClientModInitializer {
+@Mod(value = SimpleVoiceAnimations.MODID, dist = Dist.CLIENT)
+@EventBusSubscriber(modid = SimpleVoiceAnimations.MODID, value = Dist.CLIENT)
+public final class SimpleVoiceAnimationsClient {
 
-    public static ClientConfig CLIENT_CONFIG;
-    public static KeyEvents KEY_EVENTS;
+    private static final KeyMapping SETTINGS = new KeyMapping("key.simplevoiceanimations.settings", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_J, "key.categories.misc");
 
-    public static KeyMapping SETTINGS;
-
-    @Override
-    public void onInitializeClient() {
-        KEY_EVENTS = new KeyEvents();
-
-        SETTINGS = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.simplevoiceanimations.settings", SDLScancode.SDL_SCANCODE_J, KeyMapping.Category.MISC));
-
-        Minecraft mc = Minecraft.getInstance();
-        CLIENT_CONFIG = ConfigBuilder
-                .builder(ClientConfig::new)
-                .path(mc.gameDirectory.toPath().resolve("config").resolve(SimpleVoiceAnimations.MODID).resolve("simplevoiceanimations-client.properties"))
-                .build();
-
-        ClientPreferencesSync.init();
-
-        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
-            if (CLIENT_CONFIG.isSetUp()) {
-                return;
-            }
-            LocalPlayer player = client.player;
-            if (player == null) {
-                return;
-            }
-            player.sendSystemMessage(Component.translatable("message.simplevoiceanimations.not_set_up", SETTINGS.getTranslatedKeyMessage().copy().withStyle(ChatFormatting.BOLD, ChatFormatting.UNDERLINE)));
-        });
+    public SimpleVoiceAnimationsClient() {
     }
+
+    @SubscribeEvent
+    public static void registerKeys(RegisterKeyMappingsEvent event) {
+        event.register(SETTINGS);
+    }
+
+    @SubscribeEvent
+    public static void clientTick(ClientTickEvent.Post event) {
+        while (SETTINGS.consumeClick()) {
+            if (net.minecraft.client.Minecraft.getInstance().screen == null) {
+                net.minecraft.client.Minecraft.getInstance().setScreen(new AnimationSettingsScreen(null));
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void loggingIn(ClientPlayerNetworkEvent.LoggingIn event) {
+        ClientPreferencesSync.clear();
+        ClientPreferencesSync.sendLocalPreferences();
+    }
+
+    @SubscribeEvent
+    public static void loggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+        ClientPreferencesSync.clear();
+    }
+
 }

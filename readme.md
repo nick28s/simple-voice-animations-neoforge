@@ -1,45 +1,41 @@
 # Simple Voice Animations
 
-Animates player heads using [Simple Voice Chat](https://modrinth.com/mod/simple-voice-chat).
+NeoForge mod for Minecraft 1.21.1 that animates player heads while they speak using Simple Voice Chat.
 
-Each player chooses their own animation style.
-If the mod is installed on the server, everyone's animation settings are synced to all other players.
-Players without the mod on their client use the style set in the `default_head_animation_style` server config option.
-On servers without the mod, your own animation settings are applied to all other players instead (can be disabled with the `fallback_to_own_animations` config option).
+## Features
 
-## Animation Styles
-
-**Squish** - The head squishes while talking.
-
-![](assets/squish.gif)
-
-**Scale Height** - The head stretches vertically while talking.
-
-![](assets/scale_height.gif)
-
-**Scale** - The whole head scales up and down while talking.
-
-![](assets/scale.gif)
-
-**Split Head (Hinge)** - The head splits open like a jaw.
-
-![](assets/split_hinge.gif)
-
-**Split Head (Vertical)** - The upper part of the head lifts straight up.
-
-![](assets/split_vertical.gif)
-*The split height is configurable for both split styles.*
-
-**Nod** - The head nods while talking.
-
-![](assets/nod.gif)
-
-## Usage
-
-Press `J` (configurable in the Minecraft key bindings) to open the settings screen.
-Choose your animation style and drag the bar in the preview to set where your head splits.
+- Pacman-style hinged head animation
+- Vertical split-head animation
+- Squish, scale, and nod animation styles
+- Configurable animation intensity
+- Configurable split height with a local skin preview
+- Multiplayer preference synchronization
+- Simple Voice Chat integration
 
 ## Requirements
 
-- [Simple Voice Chat](https://modrinth.com/mod/simple-voice-chat)
-- [ModMenu](https://modrinth.com/mod/modmenu) (Optional)
+- Minecraft 1.21.1
+- NeoForge 21.1.264 or a compatible 1.21.1 release
+- Simple Voice Chat for NeoForge 1.21.1
+
+## Development
+
+Build the mod:
+
+```powershell
+.\gradlew.bat build
+```
+
+Start the NeoForge development client:
+
+```powershell
+.\gradlew.bat runClient
+```
+
+The built JAR is written to `build/libs`.
+
+In game, press `J` to open the animation settings. The settings screen allows selecting the animation style, changing intensity, and dragging the split-height marker over the player's skin.
+
+## License
+
+The original Fabric project is authored by Max Henkel. Check the upstream project's licensing terms before redistributing this port.

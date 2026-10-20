@@ -20,7 +20,7 @@ public class AnimationData {
     }
 
     public float getAnimationProgress() {
-        float deltaTicks = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(true);
+        float deltaTicks = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
 
         if (deltaTicks > 2F) {
             deltaTicks = 2F;

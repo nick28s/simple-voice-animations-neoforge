@@ -4,7 +4,7 @@ import de.maxhenkel.simplevoiceanimations.config.ClientConfig;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.util.Mth;
 
-public class Preferences {
+public final class Preferences {
 
     public static final float MIN_SPLIT_HEIGHT = 0.5F;
     public static final float MAX_SPLIT_HEIGHT = 7.5F;
@@ -27,34 +27,19 @@ public class Preferences {
         return headAnimationStyle;
     }
 
-    public void setHeadAnimationStyle(ClientConfig.HeadAnimationStyle headAnimationStyle) {
-        this.headAnimationStyle = headAnimationStyle;
-    }
-
     public float getHeadSplitHeight() {
         return headSplitHeight;
-    }
-
-    public void setHeadSplitHeight(float headSplitHeight) {
-        this.headSplitHeight = headSplitHeight;
     }
 
     public float getIntensity() {
         return intensity;
     }
 
-    public void setIntensity(float intensity) {
-        this.intensity = intensity;
-    }
-
     public static Preferences read(FriendlyByteBuf buffer) {
-        ClientConfig.HeadAnimationStyle headAnimationStyle = buffer.readEnum(ClientConfig.HeadAnimationStyle.class);
-        float headSplitHeight = buffer.readFloat();
-        float intensity = buffer.readFloat();
         return new Preferences(
-                headAnimationStyle,
-                clamp(headSplitHeight, MIN_SPLIT_HEIGHT, MAX_SPLIT_HEIGHT, MIN_SPLIT_HEIGHT),
-                clamp(intensity, MIN_INTENSITY, MAX_INTENSITY, DEFAULT_INTENSITY)
+                buffer.readEnum(ClientConfig.HeadAnimationStyle.class),
+                clamp(buffer.readFloat(), MIN_SPLIT_HEIGHT, MAX_SPLIT_HEIGHT, MIN_SPLIT_HEIGHT),
+                clamp(buffer.readFloat(), MIN_INTENSITY, MAX_INTENSITY, DEFAULT_INTENSITY)
         );
     }
 
@@ -65,10 +50,7 @@ public class Preferences {
     }
 
     private static float clamp(float value, float min, float max, float fallback) {
-        if (!Float.isFinite(value)) {
-            return fallback;
-        }
-        return Mth.clamp(value, min, max);
+        return Float.isFinite(value) ? Mth.clamp(value, min, max) : fallback;
     }
 
 }

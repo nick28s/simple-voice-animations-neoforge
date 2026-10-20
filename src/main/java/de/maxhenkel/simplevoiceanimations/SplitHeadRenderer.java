@@ -11,9 +11,12 @@ import org.joml.Vector3fc;
 
 import java.util.List;
 
-public class SplitHeadRenderer {
+public final class SplitHeadRenderer {
 
     private static final float HINGE_Z = 4F;
+
+    private SplitHeadRenderer() {
+    }
 
     public static void render(List<ModelPart.Cube> cubes, PoseStack.Pose pose, VertexConsumer buffer, int lightCoords, int overlayCoords, int color, float splitHeight, float splitRotation, float splitDistance) {
         float planeY = -splitHeight;
@@ -33,41 +36,41 @@ public class SplitHeadRenderer {
         float minY = Float.POSITIVE_INFINITY;
         float maxY = Float.NEGATIVE_INFINITY;
         for (ModelPart.Polygon polygon : cube.polygons) {
-            for (ModelPart.Vertex vertex : polygon.vertices()) {
-                minY = Math.min(minY, vertex.y());
-                maxY = Math.max(maxY, vertex.y());
+            for (ModelPart.Vertex vertex : polygon.vertices) {
+                minY = Math.min(minY, vertex.pos.y());
+                maxY = Math.max(maxY, vertex.pos.y());
             }
         }
         for (ModelPart.Polygon polygon : cube.polygons) {
-            ModelPart.Vertex[] vertices = polygon.vertices();
-            if (polygon.normal().y() != 0F) {
-                if (polygon.normal().y() > 0F) {
+            ModelPart.Vertex[] vertices = polygon.vertices;
+            if (polygon.normal.y() != 0F) {
+                if (polygon.normal.y() > 0F) {
                     bottomFace = polygon;
                 }
-                boolean top = vertices[0].y() <= planeY;
-                renderQuad(top ? topPose : bottomPose, top ? topNormal : bottomNormal, buffer, vertices, polygon.normal(), lightCoords, overlayCoords, color);
+                boolean top = vertices[0].pos.y() <= planeY;
+                renderQuad(top ? topPose : bottomPose, top ? topNormal : bottomNormal, buffer, vertices, polygon.normal, lightCoords, overlayCoords, color);
                 continue;
             }
-            float firstEdgeY = vertices[0].y();
-            float secondEdgeY = vertices[2].y();
+            float firstEdgeY = vertices[0].pos.y();
+            float secondEdgeY = vertices[2].pos.y();
             if (planeY <= Math.min(firstEdgeY, secondEdgeY)) {
-                renderQuad(bottomPose, bottomNormal, buffer, vertices, polygon.normal(), lightCoords, overlayCoords, color);
+                renderQuad(bottomPose, bottomNormal, buffer, vertices, polygon.normal, lightCoords, overlayCoords, color);
             } else if (planeY >= Math.max(firstEdgeY, secondEdgeY)) {
-                renderQuad(topPose, topNormal, buffer, vertices, polygon.normal(), lightCoords, overlayCoords, color);
+                renderQuad(topPose, topNormal, buffer, vertices, polygon.normal, lightCoords, overlayCoords, color);
             } else {
                 float delta = (planeY - firstEdgeY) / (secondEdgeY - firstEdgeY);
                 ModelPart.Vertex cut03 = lerpVertex(vertices[0], vertices[3], delta);
                 ModelPart.Vertex cut12 = lerpVertex(vertices[1], vertices[2], delta);
-                renderQuad(topPose, topNormal, buffer, new ModelPart.Vertex[]{vertices[0], vertices[1], cut12, cut03}, polygon.normal(), lightCoords, overlayCoords, color);
-                renderQuad(bottomPose, bottomNormal, buffer, new ModelPart.Vertex[]{cut03, cut12, vertices[2], vertices[3]}, polygon.normal(), lightCoords, overlayCoords, color);
+                renderQuad(topPose, topNormal, buffer, new ModelPart.Vertex[]{vertices[0], vertices[1], cut12, cut03}, polygon.normal, lightCoords, overlayCoords, color);
+                renderQuad(bottomPose, bottomNormal, buffer, new ModelPart.Vertex[]{cut03, cut12, vertices[2], vertices[3]}, polygon.normal, lightCoords, overlayCoords, color);
             }
         }
         if (bottomFace != null && planeY > minY && planeY < maxY) {
-            ModelPart.Vertex[] vertices = bottomFace.vertices();
+            ModelPart.Vertex[] vertices = bottomFace.vertices;
             ModelPart.Vertex[] cutFace = new ModelPart.Vertex[]{atHeight(vertices[0], planeY), atHeight(vertices[1], planeY), atHeight(vertices[2], planeY), atHeight(vertices[3], planeY)};
-            renderQuad(topPose, topNormal, buffer, cutFace, bottomFace.normal(), lightCoords, overlayCoords, color);
+            renderQuad(topPose, topNormal, buffer, cutFace, bottomFace.normal, lightCoords, overlayCoords, color);
             ModelPart.Vertex[] flippedCutFace = new ModelPart.Vertex[]{cutFace[3], cutFace[2], cutFace[1], cutFace[0]};
-            renderQuad(bottomPose, bottomNormal, buffer, flippedCutFace, new Vector3f(bottomFace.normal()).negate(), lightCoords, overlayCoords, color);
+            renderQuad(bottomPose, bottomNormal, buffer, flippedCutFace, new Vector3f(bottomFace.normal).negate(), lightCoords, overlayCoords, color);
         }
     }
 
@@ -75,17 +78,17 @@ public class SplitHeadRenderer {
         Vector3f transformedNormal = normalMatrix.transform(new Vector3f(normal)).normalize();
         Vector3f position = new Vector3f();
         for (ModelPart.Vertex vertex : vertices) {
-            pose.transformPosition(vertex.x() / 16F, vertex.y() / 16F, vertex.z() / 16F, position);
-            buffer.addVertex(position.x(), position.y(), position.z(), color, vertex.u(), vertex.v(), overlayCoords, lightCoords, transformedNormal.x(), transformedNormal.y(), transformedNormal.z());
+            pose.transformPosition(vertex.pos.x() / 16F, vertex.pos.y() / 16F, vertex.pos.z() / 16F, position);
+            buffer.addVertex(position.x(), position.y(), position.z(), color, vertex.u, vertex.v, overlayCoords, lightCoords, transformedNormal.x(), transformedNormal.y(), transformedNormal.z());
         }
     }
 
     private static ModelPart.Vertex lerpVertex(ModelPart.Vertex from, ModelPart.Vertex to, float delta) {
-        return new ModelPart.Vertex(Mth.lerp(delta, from.x(), to.x()), Mth.lerp(delta, from.y(), to.y()), Mth.lerp(delta, from.z(), to.z()), Mth.lerp(delta, from.u(), to.u()), Mth.lerp(delta, from.v(), to.v()));
+        return new ModelPart.Vertex(Mth.lerp(delta, from.pos.x(), to.pos.x()), Mth.lerp(delta, from.pos.y(), to.pos.y()), Mth.lerp(delta, from.pos.z(), to.pos.z()), Mth.lerp(delta, from.u, to.u), Mth.lerp(delta, from.v, to.v));
     }
 
     private static ModelPart.Vertex atHeight(ModelPart.Vertex vertex, float y) {
-        return new ModelPart.Vertex(vertex.x(), y, vertex.z(), vertex.u(), vertex.v());
+        return new ModelPart.Vertex(vertex.pos.x(), y, vertex.pos.z(), vertex.u, vertex.v);
     }
 
 }

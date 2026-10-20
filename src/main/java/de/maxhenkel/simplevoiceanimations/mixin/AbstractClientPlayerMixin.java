@@ -10,11 +10,11 @@ import org.spongepowered.asm.mixin.Unique;
 public class AbstractClientPlayerMixin implements AnimationDataExtension {
 
     @Unique
-    private final AnimationData data = new AnimationData();
+    private final AnimationData simplevoiceanimations$data = new AnimationData();
 
     @Override
     public AnimationData simplevoiceanimations$getData() {
-        return data;
+        return simplevoiceanimations$data;
     }
 
 }
