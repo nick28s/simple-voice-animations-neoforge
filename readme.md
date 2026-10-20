@@ -56,7 +56,8 @@ Start the NeoForge development client:
 .\gradlew.bat runClient
 ```
 
-The built JAR is written to `build/libs`.
+The built JAR is written to `build/libs` with the `-neoforge` suffix, for example
+`simplevoiceanimations-neoforge-1.0.0.jar`.
 
 ## Credits and fork information
 
