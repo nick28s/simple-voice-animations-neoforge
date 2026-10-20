@@ -1,0 +1,13 @@
+{
+  "itemGroup.simplevoiceanimationsneoforge": "Example Mod Tab",
+  "block.simplevoiceanimationsneoforge.example_block": "Example Block",
+  "item.simplevoiceanimationsneoforge.example_item": "Example Item",
+
+  "simplevoiceanimationsneoforge.configuration.title": "Simple Voice Animations NeoForge Configs",
+  "simplevoiceanimationsneoforge.configuration.section.simplevoiceanimationsneoforge.common.toml": "Simple Voice Animations NeoForge Configs",
+  "simplevoiceanimationsneoforge.configuration.section.simplevoiceanimationsneoforge.common.toml.title": "Simple Voice Animations NeoForge Configs",
+  "simplevoiceanimationsneoforge.configuration.items": "Item List",
+  "simplevoiceanimationsneoforge.configuration.logDirtBlock": "Log Dirt Block",
+  "simplevoiceanimationsneoforge.configuration.magicNumberIntroduction": "Magic Number Text",
+  "simplevoiceanimationsneoforge.configuration.magicNumber": "Magic Number"
+}
