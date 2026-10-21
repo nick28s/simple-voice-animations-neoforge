@@ -39,7 +39,7 @@ Choose your animation style and drag the bar in the preview to set where your he
 ## Requirements
 
 - Minecraft 1.21.1
-- NeoForge 21.1.264 or a compatible 1.21.1 release
+- NeoForge 21.1.235 or a compatible 1.21.1 release
 - [Simple Voice Chat](https://modrinth.com/mod/simple-voice-chat) for NeoForge
 
 ## Development
